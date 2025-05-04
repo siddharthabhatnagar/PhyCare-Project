@@ -1,0 +1,35 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="#FFFDF7"
+    android:padding="24dp"
+    android:spacing="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="How would you like to share?"
+        android:textColor="#4E342E"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="24dp" />
+
+    <ImageButton
+        android:id="@+id/btnShareAI"
+        android:layout_width="400dp"
+        android:layout_height="200dp"
+        android:src="@drawable/share_with_ai"
+        android:contentDescription="Share with AI"
+        android:scaleType="centerInside"
+        android:layout_marginBottom="24dp" />
+
+    <ImageButton
+        android:id="@+id/btnShareCommunity"
+        android:layout_width="400dp"
+        android:layout_height="200dp"
+        android:src="@drawable/share_with_people"
+        android:contentDescription="Share with Community"
+        android:scaleType="centerInside" />
+</LinearLayout>

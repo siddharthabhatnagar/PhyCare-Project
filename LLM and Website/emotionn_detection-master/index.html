@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Voice Emotion Detector</title>
+<style>
+  /* Reset */
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 1rem;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  header h1 {
+    font-weight: 900;
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+  }
+  header p {
+    font-size: 1rem;
+    opacity: 0.85;
+    margin-top: 0;
+  }
+  main {
+    background: rgba(255 255 255 / 0.1);
+    border-radius: 12px;
+    padding: 1rem 1.5rem 2rem 1.5rem;
+    max-width: 750px;
+    width: 90%;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+  }
+  label {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+  input[type="file"] {
+    width: 100%;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+  .record-btn {
+    background: #764ba2;
+    border: none;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 50px;
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    transition: background 0.3s ease;
+    margin-bottom: 1rem;
+    user-select: none;
+  }
+  .record-btn.recording {
+    background: #e65858;
+    animation: pulse 1.2s infinite alternate;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(230, 88, 88, 0.7); }
+    100% { box-shadow: 0 0 10px 8px rgba(230, 88, 88, 0); }
+  }
+  textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 100px;
+    border-radius: 8px;
+    border: none;
+    padding: 0.75rem;
+    font-size: 1rem;
+    font-family: inherit;
+    margin-bottom: 1rem;
+  }
+  .result-section {
+    background: rgba(0,0,0,0.2);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 0.5rem;
+  }
+  .emotion {
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    text-transform: capitalize;
+  }
+  .tips {
+    font-size: 1rem;
+    line-height: 1.3;
+    margin-top: 0;
+  }
+  .warning {
+    background: #ffc107;
+    color: #333;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  footer {
+    margin-top: auto;
+    font-size: 0.75rem;
+    opacity: 0.6;
+    text-align: center;
+    padding: 1rem 0 0 0;
+    width: 100%;
+  }
+  /* Responsive */
+  @media (max-width: 400px) {
+    main {
+      padding: 1rem;
+      max-width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Voice Emotion Detector</h1>
+  <p>Upload a recording or record live to detect emotions & get tips</p>
+</header>
+<main>
+  <label for="audioUpload">Upload Voice Recording (wav/mp3/m4a):</label>
+  <input type="file" id="audioUpload" accept="audio/*" />
+
+  <label for="languageSelect">Select Language:</label>
+  <select id="languageSelect" style="margin-bottom: 1rem; border-radius: 8px; padding: 0.5rem; font-size: 1rem; width: 100%;">
+    <option value="en-IN" selected>English (India)</option>
+    <option value="hi-IN">Hindi</option>
+    <option value="ja-JP">Japanese</option>
+    <option value="ko-KR">Korean</option>
+    <option value="zh-CN">Chinese (Mandarin)</option>
+    <option value="ta-IN">Tamil</option>
+    <option value="te-IN">Telugu</option>
+    <option value="bn-IN">Bengali</option>
+    <option value="mr-IN">Marathi</option>
+    <option value="gu-IN">Gujarati</option>
+    <option value="pa-IN">Punjabi</option>
+    <option value="ml-IN">Malayalam</option>
+    <option value="or-IN">Odia</option>
+    <option value="as-IN">Assamese</option>
+  </select>
+
+  <button id="recordButton" class="record-btn" title="Click to start recording">Start Recording</button>
+
+  <label for="transcript">Transcribed Text:</label>
+  <textarea id="transcript" rows="6" placeholder="Transcription will appear here..." readonly></textarea>
+
+  <div id="emotionResult" class="result-section" style="display:none;">
+    <div class="emotion" id="detectedEmotion"></div>
+    <p class="tips" id="emotionTips"></p>
+    <label for="llmResponse">Empathetic Response:</label>
+    <textarea id="llmResponse" rows="4" readonly style="width: 100%; border-radius: 8px; padding: 0.5rem; font-family: inherit; margin-top: 0.5rem;"></textarea>
+    <div id="weightedEmotionScores" style="margin-top: 0.5rem; font-weight: 600;"></div>
+    <canvas id="weightedEmotionChart" style="margin-top: 1rem; max-width: 100%; height: 100px;"></canvas>
+  </div>
+
+  <div id="warningMsg" class="warning" style="display:none;"></div>
+  </main>
+  <section id="userSection" style="margin-top: 1rem; background: rgba(255 255 255 / 0.1); border-radius: 12px; padding: 1rem; max-width: 750px; width: 90%; box-shadow: 0 8px 30px rgba(0,0,0,0.3); color: #fff;">
+    <h2>User Profile</h2>
+    <div id="loginForm">
+      <input type="text" id="usernameInput" placeholder="Enter username" style="padding: 0.5rem; border-radius: 8px; border: none; width: 60%;" />
+      <button id="loginBtn" style="padding: 0.5rem 1rem; border-radius: 8px; background: #764ba2; border: none; color: #fff; cursor: pointer;">Login</button>
+    </div>
+    <div id="userInfo" style="display:none;">
+      <p>Logged in as: <span id="currentUsername"></span></p>
+      <button id="logoutBtn" style="padding: 0.5rem 1rem; border-radius: 8px; background: #e65858; border: none; color: #fff; cursor: pointer;">Logout</button>
+    </div>
+  </section>
+
+  <section id="historySection" style="margin-top: 1rem; background: rgba(255 255 255 / 0.1); border-radius: 12px; padding: 1rem; max-width: 750px; width: 90%; box-shadow: 0 8px 30px rgba(0,0,0,0.3); color: #fff; display:none;">
+    <h2>Emotion History</h2>
+    <button id="clearHistoryBtn" style="padding: 0.5rem 1rem; border-radius: 8px; background: #f44336; border: none; color: #fff; cursor: pointer; margin-bottom: 1rem;">Clear History</button>
+    <ul id="historyList" style="list-style: none; padding-left: 0; max-height: 200px; overflow-y: auto;"></ul>
+  </section>
+
+  <section id="exportSection" style="margin-top: 1rem; background: rgba(255 255 255 / 0.1); border-radius: 12px; padding: 1rem; max-width: 750px; width: 90%; box-shadow: 0 8px 30px rgba(0,0,0,0.3); color: #fff; display:none;">
+    <h2>Export & Share</h2>
+    <button id="exportTextBtn" style="padding: 0.5rem 1rem; border-radius: 8px; background: #2196f3; border: none; color: #fff; cursor: pointer; margin-right: 1rem;">Export as Text</button>
+    <button id="exportPdfBtn" style="padding: 0.5rem 1rem; border-radius: 8px; background: #4caf50; border: none; color: #fff; cursor: pointer;">Export as PDF</button>
+  </section>
+
+  <section id="sentimentChartSection" style="margin-top: 1rem; background: rgba(255 255 255 / 0.1); border-radius: 12px; padding: 1rem; max-width: 750px; width: 90%; box-shadow: 0 8px 30px rgba(0,0,0,0.3); color: #fff; display:none;">
+    <h2>Sentiment Analysis Over Time</h2>
+    <canvas id="sentimentLineChart" style="max-width: 100%; height: 150px;"></canvas>
+  </section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Add back event listeners for recordButton and audioUpload to restore input functionality
+  const recordButton = document.getElementById('recordButton');
+  const audioUpload = document.getElementById('audioUpload');
+  const transcriptArea = document.getElementById('transcript');
+  const emotionResultSection = document.getElementById('emotionResult');
+  const detectedEmotionElem = document.getElementById('detectedEmotion');
+  const emotionTipsElem = document.getElementById('emotionTips');
+  const warningMsg = document.getElementById('warningMsg');
+
+  let mediaRecorder;
+  let audioChunks = [];
+  let isRecording = false;
+
+  let weightedEmotionChartInstance = null;
+
+  function updatePieChart(weightedEmotions) {
+    const ctx = document.getElementById('weightedEmotionChart').getContext('2d');
+    const labels = Object.keys(weightedEmotions);
+    const data = Object.values(weightedEmotions);
+
+    if (weightedEmotionChartInstance) {
+      weightedEmotionChartInstance.data.labels = labels;
+      weightedEmotionChartInstance.data.datasets[0].data = data;
+      weightedEmotionChartInstance.update();
+    } else {
+      weightedEmotionChartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Emotion Weights',
+            data: data,
+            backgroundColor: [
+              '#4caf50', // green
+              '#2196f3', // blue
+              '#ffeb3b', // yellow
+              '#f44336', // red
+              '#9c27b0', // purple
+              '#ff9800', // orange
+              '#607d8b'  // blue grey
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#fff'
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  function clearPieChart() {
+    if (weightedEmotionChartInstance) {
+      weightedEmotionChartInstance.destroy();
+      weightedEmotionChartInstance = null;
+    }
+  }
+
+  async function startRecording() {
+    resetUI();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      warningMsg.textContent = "MediaDevices API or getUserMedia not supported in this browser.";
+      warningMsg.style.display = "block";
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      audioChunks = [];
+      mediaRecorder.ondataavailable = event => {
+        if (event.data.size > 0) {
+          audioChunks.push(event.data);
+        }
+      };
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const arrayBuffer = await audioBlob.arrayBuffer();
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+        function encodeWAV(audioBuffer) {
+          const numChannels = audioBuffer.numberOfChannels;
+          const sampleRate = audioBuffer.sampleRate;
+          const format = 1;
+          const bitDepth = 16;
+
+          let samples;
+          if (numChannels === 2) {
+            const channelData0 = audioBuffer.getChannelData(0);
+            const channelData1 = audioBuffer.getChannelData(1);
+            samples = interleave(channelData0, channelData1);
+          } else {
+            samples = audioBuffer.getChannelData(0);
+          }
+
+          const buffer = new ArrayBuffer(44 + samples.length * 2);
+          const view = new DataView(buffer);
+
+          writeString(view, 0, 'RIFF');
+          view.setUint32(4, 36 + samples.length * 2, true);
+          writeString(view, 8, 'WAVE');
+          writeString(view, 12, 'fmt ');
+          view.setUint32(16, 16, true);
+          view.setUint16(20, format, true);
+          view.setUint16(22, numChannels, true);
+          view.setUint32(24, sampleRate, true);
+          view.setUint32(28, sampleRate * numChannels * bitDepth / 8, true);
+          view.setUint16(32, numChannels * bitDepth / 8, true);
+          view.setUint16(34, bitDepth, true);
+          writeString(view, 36, 'data');
+          view.setUint32(40, samples.length * 2, true);
+
+          floatTo16BitPCM(view, 44, samples);
+
+          return new Blob([view], { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+          for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+          }
+        }
+
+        function floatTo16BitPCM(output, offset, input) {
+          for (let i = 0; i < input.length; i++, offset += 2) {
+            let s = Math.max(-1, Math.min(1, input[i]));
+            s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            output.setInt16(offset, s, true);
+          }
+        }
+
+        function interleave(inputL, inputR) {
+          const length = inputL.length + inputR.length;
+          const result = new Float32Array(length);
+
+          let index = 0;
+          let inputIndex = 0;
+
+          while (index < length) {
+            result[index++] = inputL[inputIndex];
+            result[index++] = inputR[inputIndex];
+            inputIndex++;
+          }
+          return result;
+        }
+
+        const wavBlob = encodeWAV(audioBuffer);
+
+        const audioURL = URL.createObjectURL(wavBlob);
+        let existingAudio = document.getElementById('recordedAudioPlayback');
+        if (!existingAudio) {
+          existingAudio = document.createElement('audio');
+          existingAudio.id = 'recordedAudioPlayback';
+          existingAudio.controls = true;
+          existingAudio.style.marginBottom = '1rem';
+          recordButton.parentNode.insertBefore(existingAudio, recordButton.nextSibling);
+        }
+        existingAudio.src = audioURL;
+        existingAudio.load();
+        existingAudio.play();
+
+        const formData = new FormData();
+        formData.append('audio', wavBlob, 'recorded_audio.wav');
+        formData.append('language', document.getElementById('languageSelect').value);
+        try {
+          const response = await fetch('/upload-audio', {
+            method: 'POST',
+            body: formData
+          });
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const data = await response.json();
+          if (data.error) {
+            warningMsg.textContent = data.error;
+            warningMsg.style.display = 'block';
+            return;
+          }
+          transcriptArea.value = data.transcription || '';
+          transcriptArea.readOnly = true;
+          transcriptArea.placeholder = "Transcription from recorded audio";
+          displayEmotion(data.emotion || 'neutral', data.llm_response || '', data.weighted_emotions || {});
+          warningMsg.style.display = 'none';
+        } catch (error) {
+          warningMsg.textContent = `Error processing recorded audio: ${error.message}`;
+          warningMsg.style.display = 'block';
+        }
+      };
+      mediaRecorder.start();
+      recordButton.textContent = "Recording...";
+      recordButton.classList.add("recording");
+      isRecording = true;
+    } catch (err) {
+      warningMsg.textContent = "Error accessing microphone: " + err.message;
+      warningMsg.style.display = "block";
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      recordButton.textContent = "Start Recording";
+      recordButton.classList.remove("recording");
+      isRecording = false;
+    }
+  }
+
+  recordButton.addEventListener('click', () => {
+    if (!isRecording) {
+      startRecording();
+    } else {
+      stopRecording();
+    }
+  });
+
+  audioUpload.addEventListener('change', async (e) => {
+    resetUI();
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('audio', file);
+    formData.append('language', document.getElementById('languageSelect').value);
+
+    try {
+      const response = await fetch('/upload-audio', {
+        method: 'POST',
+        body: formData
+      });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      if (data.error) {
+        warningMsg.textContent = data.error;
+        warningMsg.style.display = 'block';
+        return;
+      }
+      transcriptArea.value = data.transcription || '';
+      transcriptArea.readOnly = true;
+      transcriptArea.placeholder = "Transcription from uploaded audio";
+
+      let weightedEmotions = data.weighted_emotions || {};
+      if (typeof weightedEmotions === 'string') {
+        try {
+          weightedEmotions = JSON.parse(weightedEmotions);
+        } catch (e) {
+          weightedEmotions = {};
+        }
+      }
+
+      displayEmotion(data.emotion || 'neutral', data.llm_response || '', weightedEmotions);
+      warningMsg.style.display = 'none';
+
+      audioUpload.value = '';
+    } catch (error) {
+      warningMsg.innerHTML = `Error processing audio file: ${error.message}<br>
+        You can use the <strong>Start Recording</strong> button for live speech-to-text transcription.<br>
+        Alternatively, you can transcribe your audio by external tools and paste text into the box below for emotion analysis.`;
+      warningMsg.style.display = 'block';
+
+      transcriptArea.readOnly = false;
+      transcriptArea.placeholder = "Paste your transcription here...";
+      transcriptArea.value = "";
+
+      transcriptArea.addEventListener('input', onTextInputForEmotion);
+
+      function onTextInputForEmotion() {
+        const text = transcriptArea.value.trim();
+        if (text.length > 0) {
+          const dominantEmotion = sentiment.analyze(text);
+          displayEmotion(dominantEmotion);
+        } else {
+          emotionResultSection.style.display = "none";
+        }
+      }
+    }
+  });
+
+  function resetUI() {
+    transcriptArea.value = "";
+    detectedEmotionElem.textContent = "";
+    emotionTipsElem.textContent = "";
+    emotionResultSection.style.display = "none";
+    warningMsg.style.display = "none";
+  }
+
+  // Function to update UI with detected emotion, weighted scores, pie chart, and LLM response
+  function displayEmotion(emotion, llmResponse, weightedEmotions) {
+    // Determine dominant emotion from weightedEmotions if available
+    if (weightedEmotions && Object.keys(weightedEmotions).length > 0) {
+      let dominantEmotion = "neutral";
+      let maxScore = -Infinity;
+      for (const [emo, score] of Object.entries(weightedEmotions)) {
+        if (score > maxScore) {
+          maxScore = score;
+          dominantEmotion = emo;
+        }
+      }
+      emotion = dominantEmotion;
+    }
+
+    // Show detected emotion text
+    detectedEmotionElem.textContent = "Detected Emotion: " + emotion;
+
+    // Show weighted emotion scores below detected emotion
+    let weightedEmotionElem = document.getElementById('weightedEmotionScores');
+    if (!weightedEmotionElem) {
+      weightedEmotionElem = document.createElement('div');
+      weightedEmotionElem.id = 'weightedEmotionScores';
+      weightedEmotionElem.style.marginTop = '0.5rem';
+      weightedEmotionElem.style.fontWeight = '600';
+      emotionResultSection.appendChild(weightedEmotionElem);
+    }
+    if (weightedEmotions && Object.keys(weightedEmotions).length > 0) {
+      let scoresText = "Weighted Emotion Scores: ";
+      scoresText += Object.entries(weightedEmotions)
+        .map(([emotion, score]) => `${emotion}: ${score}`)
+        .join(", ");
+      weightedEmotionElem.textContent = scoresText;
+
+      // Update or create pie chart
+      updatePieChart(weightedEmotions);
+    } else {
+      weightedEmotionElem.textContent = "";
+      clearPieChart();
+    }
+
+    emotionTipsElem.textContent = llmResponse ? "" : "No empathetic response available.";
+    emotionResultSection.style.display = "block";
+    const llmResponseElem = document.getElementById('llmResponse');
+    if (llmResponseElem) {
+      llmResponseElem.value = llmResponse || "";
+    }
+
+    // Add to history
+    addToHistory({
+      timestamp: new Date().toLocaleString(),
+      emotion: emotion,
+      llmResponse: llmResponse,
+      weightedEmotions: weightedEmotions
+    });
+  }
+
+  // History management
+  const historyListElem = document.getElementById('historyList');
+  const historySection = document.getElementById('historySection');
+  const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+  let sentimentLineChartInstance = null;
+
+  function loadHistory() {
+    const history = JSON.parse(localStorage.getItem('emotionHistory') || '[]');
+    historyListElem.innerHTML = '';
+    if (history.length > 0) {
+      historySection.style.display = 'block';
+      exportSection.style.display = 'block';
+      sentimentChartSection.style.display = 'block';
+
+      history.forEach(entry => {
+        const li = document.createElement('li');
+        li.style.marginBottom = '0.5rem';
+
+        // Display weighted emotions only in history
+        if (entry.weightedEmotions && Object.keys(entry.weightedEmotions).length > 0) {
+          const weightedEmotionsText = Object.entries(entry.weightedEmotions)
+            .map(([emotion, score]) => `${emotion}: ${score.toFixed(2)}`)
+            .join(', ');
+          li.textContent = `[${entry.timestamp}] Weighted Emotions: ${weightedEmotionsText}`;
+        } else {
+          li.textContent = `[${entry.timestamp}] No weighted emotions data`;
+        }
+
+        historyListElem.appendChild(li);
+      });
+
+      updateSentimentChart(history);
+    } else {
+      historySection.style.display = 'none';
+      exportSection.style.display = 'none';
+      sentimentChartSection.style.display = 'none';
+    }
+  }
+
+  function updateSentimentChart(history) {
+    // Prepare data for chart: x-axis timestamps, y-axis weighted emotions
+    const labels = history.map(entry => entry.timestamp);
+    // Collect all emotion keys from history
+    const allEmotions = new Set();
+    history.forEach(entry => {
+      if (entry.weightedEmotions) {
+        Object.keys(entry.weightedEmotions).forEach(emotion => allEmotions.add(emotion));
+      }
+    });
+    const emotionsArray = Array.from(allEmotions);
+
+    // Prepare datasets for each emotion
+    const datasets = emotionsArray.map(emotion => {
+      return {
+        label: emotion,
+        data: history.map(entry => {
+          if (entry.weightedEmotions && entry.weightedEmotions[emotion] !== undefined) {
+            return entry.weightedEmotions[emotion];
+          } else {
+            return 0;
+          }
+        }),
+        fill: false,
+        borderColor: getColorForEmotion(emotion),
+        tension: 0.1
+      };
+    });
+
+    const ctx = document.getElementById('sentimentLineChart').getContext('2d');
+
+    if (sentimentLineChartInstance) {
+      sentimentLineChartInstance.data.labels = labels;
+      sentimentLineChartInstance.data.datasets = datasets;
+      sentimentLineChartInstance.update();
+    } else {
+      sentimentLineChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
+          },
+          stacked: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#fff'
+              }
+            },
+            title: {
+              display: true,
+              text: 'Mood Pattern Over Time',
+              color: '#fff',
+              font: {
+                size: 16
+              }
+            }
+          },
+          scales: {
+            x: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Time',
+                color: '#fff'
+              },
+              ticks: {
+                color: '#fff',
+                maxRotation: 45,
+                minRotation: 45
+              }
+            },
+            y: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Emotion Score',
+                color: '#fff'
+              },
+              ticks: {
+                color: '#fff',
+                beginAtZero: true
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  function getColorForEmotion(emotion) {
+    // Assign colors for known emotions, fallback to random color
+    const colorMap = {
+      happy: '#4caf50',
+      sad: '#2196f3',
+      angry: '#f44336',
+      neutral: '#9e9e9e',
+      fear: '#ff9800',
+      surprise: '#ffeb3b',
+      disgust: '#607d8b'
+    };
+    return colorMap[emotion.toLowerCase()] || getRandomColor();
+  }
+
+  function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  }
+
+  function addToHistory(entry) {
+    const history = JSON.parse(localStorage.getItem('emotionHistory') || '[]');
+    history.unshift(entry);
+    if (history.length > 50) {
+      history.pop();
+    }
+    localStorage.setItem('emotionHistory', JSON.stringify(history));
+    loadHistory();
+  }
+
+  clearHistoryBtn.addEventListener('click', () => {
+    localStorage.removeItem('emotionHistory');
+    loadHistory();
+  });
+
+  // User login/logout
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const usernameInput = document.getElementById('usernameInput');
+  const loginForm = document.getElementById('loginForm');
+  const userInfo = document.getElementById('userInfo');
+  const currentUsernameElem = document.getElementById('currentUsername');
+
+  function updateUserUI() {
+    const username = localStorage.getItem('username');
+    if (username) {
+      loginForm.style.display = 'none';
+      userInfo.style.display = 'block';
+      currentUsernameElem.textContent = username;
+    } else {
+      loginForm.style.display = 'block';
+      userInfo.style.display = 'none';
+      currentUsernameElem.textContent = '';
+    }
+  }
+
+  loginBtn.addEventListener('click', () => {
+    const username = usernameInput.value.trim();
+    if (username) {
+      localStorage.setItem('username', username);
+      updateUserUI();
+    } else {
+      alert('Please enter a username to login.');
+    }
+  });
+
+  logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('username');
+    updateUserUI();
+  });
+
+  updateUserUI();
+
+  // Export functionality
+  const exportTextBtn = document.getElementById('exportTextBtn');
+  const exportPdfBtn = document.getElementById('exportPdfBtn');
+
+  exportTextBtn.addEventListener('click', () => {
+    const history = JSON.parse(localStorage.getItem('emotionHistory') || '[]');
+    if (history.length === 0) {
+      alert('No history to export.');
+      return;
+    }
+    let textContent = 'Emotion History Export\n\n';
+    history.forEach(entry => {
+      textContent += `[${entry.timestamp}] Emotion: ${entry.emotion}\nEmpathy: ${entry.llmResponse}\n\n`;
+    });
+    const blob = new Blob([textContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'emotion_history.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  exportPdfBtn.addEventListener('click', () => {
+    const history = JSON.parse(localStorage.getItem('emotionHistory') || '[]');
+    if (history.length === 0) {
+      alert('No history to export.');
+      return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(12);
+    let y = 10;
+    doc.text('Emotion History Export', 10, y);
+    y += 10;
+    history.forEach(entry => {
+      doc.text(`[${entry.timestamp}] Emotion: ${entry.emotion}`, 10, y);
+      y += 7;
+      const splitText = doc.splitTextToSize(`Empathy: ${entry.llmResponse}`, 180);
+      doc.text(splitText, 10, y);
+      y += splitText.length * 7 + 5;
+      if (y > 270) {
+        doc.addPage();
+        y = 10;
+      }
+    });
+    doc.save('emotion_history.pdf');
+  });
+
+  // Load history on page load
+  loadHistory();
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFDF7"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Current Stress Level"
+        android:textSize="18sp"
+        android:textColor="#4E342E"
+        android:textStyle="bold" />
+
+    <ProgressBar
+        android:id="@+id/stressProgressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:progress="30"
+        android:max="100"
+        android:progressTint="#FFA726"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/stressLevelText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mild Stress"
+        android:textColor="#6D4C41"
+        android:textSize="16sp" />
+
+    <!-- Placeholder for Suggestions -->
+    <Button
+        android:id="@+id/stresstest"
+        android:layout_marginTop="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Click Here for Stress Test" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Suggested Activity:"
+        android:textStyle="bold"
+        android:textColor="#4E342E"
+        android:layout_marginTop="24dp" />
+
+    <TextView
+        android:id="@+id/suggestionText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Try 5 mins of breathing exercise."
+        android:textColor="#6D4C41"
+        android:layout_marginTop="8dp" />
+
+</LinearLayout>

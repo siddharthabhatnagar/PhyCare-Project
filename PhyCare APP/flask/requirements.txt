@@ -1,0 +1,10 @@
+speechrecognition
+textblob
+deep-translator
+langchain
+langchain-core
+langchain-community
+langchain-groq
+pyaudio
+pydub
+Flask

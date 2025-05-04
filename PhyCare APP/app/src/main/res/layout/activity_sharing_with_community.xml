@@ -1,0 +1,78 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFDF7"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Share with Community"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#4E342E"
+        android:layout_marginBottom="16dp" />
+
+    <EditText
+        android:id="@+id/communityTextInput"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:hint="Write a thought"
+        android:textColorHint="#565656"
+        android:background="@drawable/edit_text_background"
+        android:gravity="top"
+        android:padding="12dp"
+        android:inputType="textMultiLine" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="12dp">
+
+<!--        <ImageButton-->
+<!--            android:id="@+id/recordVoiceButton"-->
+<!--            android:layout_width="60dp"-->
+<!--            android:layout_height="60dp"-->
+<!--            android:background="@drawable/voice_button_bg"-->
+<!--            android:src="@drawable/ic_mic"-->
+<!--            android:contentDescription="Record voice"-->
+<!--            android:tint="#FFFFFF"-->
+<!--            android:layout_marginEnd="16dp" />-->
+
+        <TextView
+            android:id="@+id/recordingStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Not recording"
+            android:textColor="#6D4C41"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/postButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Post"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="#FF4400"
+        android:textColor="#FFF" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Community Feed"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#4E342E"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="8dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/communityFeed"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>
