@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Set Groq API key from environment variable or fallback to provided key
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "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")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 if not GROQ_API_KEY:
     logger.warning("GROQ_API_KEY environment variable not set. LangChain Groq may not work properly.")
 os.environ["GROQ_API_KEY"] = GROQ_API_KEY
